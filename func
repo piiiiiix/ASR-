@@ -1,0 +1,43 @@
+import os
+import librosa
+import numpy as np
+
+
+# 传入*PHN路径，读取并逐行存在list中
+def read_phn(filename):
+    f = open(filename, 'r')
+    res = list()
+    for line in f:
+        # line = f.readline()  多余狗屁东西，害我跳行读
+        res.append(line.split())
+    f.close()
+    return res
+
+
+# 传入DR*的子目录路径, 获取其下的*.PHN, *.WAV的路径
+def get_path(path):
+    name_list = list()
+    for i in os.listdir(path):
+        if i[-4:] == '.PHN':
+            name_list.append(path + '\\' + i[:-4])
+    return name_list
+
+
+# 传入DR*的子目录路径,将其下WAV按照PHN的帧划分语素，做MFCC处理并保存
+def deal_speaker(path, count_dict):
+    name_list = get_path(path)
+    for name in name_list:
+        phn = name + '.PHN'
+        wav = name + '.WAV'
+        rp = read_phn(phn)
+        y, sr = librosa.load(wav, sr=None)
+        for i in rp:
+            if i[2] in count_dict:
+                count_dict[i[2]] += 1
+            else:
+                count_dict[i[2]] = 1
+            if os.path.exists('D:\\语音识别\\LIB\\test_res\\'+i[2]+'\\'):
+                np.save('D:\\语音识别\\LIB\\test_res\\'+i[2]+'\\'+str(count_dict[i[2]]), librosa.feature.mfcc(y=y[int(i[0]):int(i[1])], sr=sr, n_mfcc=40))
+            else:
+                os.mkdir('D:\\语音识别\\LIB\\test_res\\'+i[2]+'\\')
+                np.save('D:\\语音识别\\LIB\\test_res\\'+i[2]+'\\'+str(count_dict[i[2]]), librosa.feature.mfcc(y=y[int(i[0]):int(i[1])], sr=sr, n_mfcc=40))
